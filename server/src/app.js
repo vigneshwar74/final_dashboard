@@ -14,6 +14,7 @@ const auditLogRoutes = require('./routes/auditLog');
 const examAllocationRoutes = require('./routes/examAllocations');
 const studentRoutes = require('./routes/students');
 const mentorGroupRoutes = require('./routes/mentorGroups');
+const occupancyRoutes = require('./routes/occupancy');
 
 const parseAllowedOrigins = () => {
   const configuredOrigins = process.env.CORS_ORIGIN
@@ -75,6 +76,7 @@ const createApp = ({ io = createNoopIo() } = {}) => {
   mountRoute('/api/exam-allocations', examAllocationRoutes);
   mountRoute('/api/students', studentRoutes);
   mountRoute('/api/mentor-groups', mentorGroupRoutes);
+  mountRoute('/api/occupancy', occupancyRoutes);
 
   app.get(['/api/health', '/health'], (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
