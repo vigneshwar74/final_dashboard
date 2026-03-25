@@ -49,26 +49,34 @@ const createCorsOptions = () => {
 
 const createApp = ({ io = createNoopIo() } = {}) => {
   const app = express();
+  const mountRoute = (apiPath, router) => {
+    app.use(apiPath, router);
+
+    const vercelPath = apiPath.replace(/^\/api/, '') || '/';
+    if (vercelPath !== apiPath) {
+      app.use(vercelPath, router);
+    }
+  };
 
   app.set('io', io);
 
   app.use(cors(createCorsOptions()));
   app.use(express.json());
 
-  app.use('/api/auth', authRoutes);
-  app.use('/api/resources', resourceRoutes);
-  app.use('/api/bookings', bookingRoutes);
-  app.use('/api/analytics', analyticsRoutes);
-  app.use('/api/assignments', assignmentRoutes);
-  app.use('/api/messages', messageRoutes);
-  app.use('/api/student-assignments', studentAssignmentRoutes);
-  app.use('/api/notifications', notificationRoutes);
-  app.use('/api/audit-logs', auditLogRoutes);
-  app.use('/api/exam-allocations', examAllocationRoutes);
-  app.use('/api/students', studentRoutes);
-  app.use('/api/mentor-groups', mentorGroupRoutes);
+  mountRoute('/api/auth', authRoutes);
+  mountRoute('/api/resources', resourceRoutes);
+  mountRoute('/api/bookings', bookingRoutes);
+  mountRoute('/api/analytics', analyticsRoutes);
+  mountRoute('/api/assignments', assignmentRoutes);
+  mountRoute('/api/messages', messageRoutes);
+  mountRoute('/api/student-assignments', studentAssignmentRoutes);
+  mountRoute('/api/notifications', notificationRoutes);
+  mountRoute('/api/audit-logs', auditLogRoutes);
+  mountRoute('/api/exam-allocations', examAllocationRoutes);
+  mountRoute('/api/students', studentRoutes);
+  mountRoute('/api/mentor-groups', mentorGroupRoutes);
 
-  app.get('/api/health', (req, res) => {
+  app.get(['/api/health', '/health'], (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
