@@ -4,6 +4,11 @@ import api from '../services/api';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
+const SOCKET_URL =
+  process.env.REACT_APP_SOCKET_URL ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : null);
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
@@ -23,8 +28,13 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
+    if (!SOCKET_URL) {
+      setSocket(null);
+      return;
+    }
+
     const token = localStorage.getItem('accessToken');
-    const s = io('http://localhost:5000', {
+    const s = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });

@@ -57,6 +57,43 @@ npm start
 
 The app runs at `http://localhost:3000` with the API at `http://localhost:5000`.
 
+## Deploying To Vercel
+
+This repository is now set up so the React app can be deployed as the frontend and the Express API can run as a Vercel Function at `/api`.
+
+### Before you deploy
+
+You will need a hosted PostgreSQL database and these Vercel environment variables:
+
+```bash
+DATABASE_URL=your-hosted-postgres-connection-string
+JWT_SECRET=your_jwt_secret
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
+NODE_ENV=production
+CORS_ORIGIN=https://your-vercel-domain.vercel.app
+REACT_APP_API_URL=/api
+```
+
+If you later add a separate realtime server for Socket.IO, also set:
+
+```bash
+REACT_APP_SOCKET_URL=https://your-realtime-server.example.com
+```
+
+### Deploy steps
+
+1. Push this repository to GitHub, GitLab, or Bitbucket.
+2. Import the repository into Vercel.
+3. Keep the project root as the repository root.
+4. Add the environment variables listed above in the Vercel dashboard.
+5. Deploy.
+
+### Important limitation
+
+Vercel Functions do not support acting as a WebSocket server, so Socket.IO live notifications will not run directly on Vercel. The app will still work, but realtime notifications need a separate realtime host or provider if you want them in production.
+
 ## Default Users (from seed)
 | Role    | Email              | Password  |
 |---------|--------------------|-----------|
