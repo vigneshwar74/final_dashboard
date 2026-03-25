@@ -224,27 +224,14 @@ const api = {
   getAuditStats: () =>
     fetch(`${API_URL}/audit-logs/stats`, { headers: getHeaders() }).then(handleResponse),
 
-  // Feedback & Ratings
-  getFeedback: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return fetch(`${API_URL}/feedback${qs ? '?' + qs : ''}`, { headers: getHeaders() }).then(handleResponse);
-  },
-
-  getResourceRatings: () =>
-    fetch(`${API_URL}/feedback/resource-ratings`, { headers: getHeaders() }).then(handleResponse),
-
-  submitFeedback: (data) =>
-    fetch(`${API_URL}/feedback`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    }).then(handleResponse),
-
   // Exam Allocations
   getExamAllocations: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return fetch(`${API_URL}/exam-allocations${qs ? '?' + qs : ''}`, { headers: getHeaders() }).then(handleResponse);
   },
+
+  getExamSeatingDetails: (id) =>
+    fetch(`${API_URL}/exam-allocations/${id}/seating`, { headers: getHeaders() }).then(handleResponse),
 
   getSuitableVenues: (params) => {
     const qs = new URLSearchParams(params).toString();
@@ -253,6 +240,23 @@ const api = {
 
   getDepartments: () =>
     fetch(`${API_URL}/exam-allocations/departments`, { headers: getHeaders() }).then(handleResponse),
+
+  getVenues: () =>
+    fetch(`${API_URL}/exam-allocations/venues`, { headers: getHeaders() }).then(handleResponse),
+
+  generateSeating: (data) =>
+    fetch(`${API_URL}/exam-allocations/generate-seating`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  saveSeating: (data) =>
+    fetch(`${API_URL}/exam-allocations/save-seating`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
 
   createExamAllocation: (data) =>
     fetch(`${API_URL}/exam-allocations`, {
@@ -268,8 +272,55 @@ const api = {
       body: JSON.stringify(data),
     }).then(handleResponse),
 
+  updateExamSeating: (id, data) =>
+    fetch(`${API_URL}/exam-allocations/${id}/seating`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
   deleteExamAllocation: (id) =>
     fetch(`${API_URL}/exam-allocations/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    }).then(handleResponse),
+
+  // Students management
+  getStudents: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetch(`${API_URL}/students${qs ? '?' + qs : ''}`, { headers: getHeaders() }).then(handleResponse);
+  },
+
+  getStudentDepartments: () =>
+    fetch(`${API_URL}/students/departments`, { headers: getHeaders() }).then(handleResponse),
+
+  getStudentsByDepartment: () =>
+    fetch(`${API_URL}/students/by-department`, { headers: getHeaders() }).then(handleResponse),
+
+  getAvailableStudents: (params) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetch(`${API_URL}/students/available?${qs}`, { headers: getHeaders() }).then(handleResponse);
+  },
+
+  getStudentStats: () =>
+    fetch(`${API_URL}/students/stats`, { headers: getHeaders() }).then(handleResponse),
+
+  createStudent: (data) =>
+    fetch(`${API_URL}/students`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  updateStudent: (id, data) =>
+    fetch(`${API_URL}/students/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  deleteStudent: (id) =>
+    fetch(`${API_URL}/students/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     }).then(handleResponse),
@@ -298,43 +349,98 @@ const api = {
   getMyCheckins: () =>
     fetch(`${API_URL}/occupancy/my-checkins`, { headers: getHeaders() }).then(handleResponse),
 
+  // Mentor groups
+  getMentorGroups: () =>
+    fetch(`${API_URL}/mentor-groups`, { headers: getHeaders() }).then(handleResponse),
+
+  getMentorGroupsMeta: () =>
+    fetch(`${API_URL}/mentor-groups/meta`, { headers: getHeaders() }).then(handleResponse),
+
+  createMentorGroup: (data) =>
+    fetch(`${API_URL}/mentor-groups`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  updateMentorGroup: (id, data) =>
+    fetch(`${API_URL}/mentor-groups/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  deleteMentorGroup: (id) =>
+    fetch(`${API_URL}/mentor-groups/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    }).then(handleResponse),
+
+  getMyMentees: () =>
+    fetch(`${API_URL}/mentor-groups/my-mentees`, { headers: getHeaders() }).then(handleResponse),
+
+  getMyMentor: () =>
+    fetch(`${API_URL}/mentor-groups/my-mentor`, { headers: getHeaders() }).then(handleResponse),
+
+  sendMessageToMentees: (data) =>
+    fetch(`${API_URL}/messages/mentees`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
   // Calendar events (combined for role-specific calendar)
   getCalendarEvents: async (params = {}) => {
-    const token = localStorage.getItem('token');
-    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+    const headers = getHeaders();
     const results = [];
+    const safeFetch = async (url) => {
+      try {
+        return await fetch(url, { headers }).then(handleResponse);
+      } catch (e) {
+        return [];
+      }
+    };
 
     // Get bookings
-    try {
-      const bk = await fetch(`${API_URL}/bookings?my=true`, { headers }).then(r => r.json());
-      if (Array.isArray(bk)) {
-        bk.forEach(b => results.push({ ...b, event_type: 'booking' }));
-      }
-    } catch (e) {}
+    const bk = await safeFetch(`${API_URL}/bookings`);
+    if (Array.isArray(bk)) {
+      bk.filter((b) => !['rejected', 'cancelled'].includes(b.status)).forEach((b) => {
+        results.push({
+          ...b,
+          title: b.purpose || `Booking: ${b.resource_name || 'Resource'}`,
+          event_type: 'booking',
+        });
+      });
+    }
 
     // Get assignments (staff)
-    try {
-      const asgn = await fetch(`${API_URL}/assignments`, { headers }).then(r => r.json());
-      if (Array.isArray(asgn)) {
-        asgn.forEach(a => results.push({ ...a, event_type: 'assignment' }));
-      }
-    } catch (e) {}
+    const asgn = await safeFetch(`${API_URL}/assignments`);
+    if (Array.isArray(asgn)) {
+      asgn.filter((a) => a.status !== 'cancelled').forEach((a) => {
+        results.push({ ...a, event_type: 'assignment' });
+      });
+    }
 
     // Get student assignments
-    try {
-      const sa = await fetch(`${API_URL}/student-assignments`, { headers }).then(r => r.json());
-      if (Array.isArray(sa)) {
-        sa.forEach(s => results.push({ ...s, event_type: 'student_activity' }));
-      }
-    } catch (e) {}
+    const sa = await safeFetch(`${API_URL}/student-assignments`);
+    if (Array.isArray(sa)) {
+      sa.filter((s) => s.status !== 'cancelled').forEach((s) => {
+        results.push({ ...s, event_type: 'student_activity' });
+      });
+    }
 
     // Get exam allocations
-    try {
-      const exam = await fetch(`${API_URL}/exam-allocations`, { headers }).then(r => r.json());
-      if (Array.isArray(exam)) {
-        exam.forEach(e => results.push({ ...e, event_type: 'exam' }));
-      }
-    } catch (e) {}
+    const exam = await safeFetch(`${API_URL}/exam-allocations`);
+    if (Array.isArray(exam)) {
+      exam.filter((e) => e.status !== 'cancelled').forEach((e) => {
+        results.push({
+          ...e,
+          title: e.exam_name || 'Exam',
+          resource_name: e.resource_name || e.venue_name,
+          event_type: 'exam',
+        });
+      });
+    }
 
     return results;
   },

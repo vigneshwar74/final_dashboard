@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const s = io('http://localhost:5000', {
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -35,7 +35,7 @@ export const SocketProvider = ({ children }) => {
 
     s.on('notification', (notif) => {
       setNotifications(prev => [notif, ...prev]);
-      setUnreadCount(prev => prev + 1);
+      setUnreadCount(prev => prev + (notif?.is_read ? 0 : 1));
     });
 
     s.on('disconnect', () => {
@@ -72,8 +72,12 @@ export const SocketProvider = ({ children }) => {
   const markRead = async (id) => {
     try {
       await api.markNotifRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev => {
+        const target = prev.find((n) => n.id === id);
+        if (!target || target.is_read) return prev;
+        setUnreadCount((count) => Math.max(0, count - 1));
+        return prev.map(n => n.id === id ? { ...n, is_read: true } : n);
+      });
     } catch (err) { console.error(err); }
   };
 

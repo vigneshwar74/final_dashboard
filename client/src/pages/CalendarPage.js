@@ -4,6 +4,22 @@ import api from '../services/api';
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7AM to 7PM
 
+const toLocalDateKey = (input) => {
+  if (!input) return '';
+  if (typeof input === 'string') return input.split('T')[0];
+  const d = new Date(input);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const timeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const [h, m] = String(timeStr).split(':').map((v) => parseInt(v, 10));
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+};
+
 const EVENT_COLORS = {
   booking: { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: '📅 Booking' },
   assignment: { bg: '#ede9fe', border: '#8b5cf6', text: '#5b21b6', label: '👨‍🏫 Assignment' },
@@ -72,15 +88,16 @@ const CalendarPage = () => {
   };
 
   const getEventsForSlot = (day, hour) => {
-    const dateStr = day.toISOString().split('T')[0];
+    const dateStr = toLocalDateKey(day);
+    const slotStart = hour * 60;
     return events.filter((e) => {
       if (selectedResource && String(e.resource_id) !== selectedResource) return false;
       if (selectedType && e.event_type !== selectedType) return false;
-      const eDate = new Date(e.date).toISOString().split('T')[0];
+      const eDate = toLocalDateKey(e.date);
       if (eDate !== dateStr) return false;
-      const startHour = parseInt(e.start_time?.split(':')[0] || '0');
-      const endHour = parseInt(e.end_time?.split(':')[0] || '0');
-      return hour >= startHour && hour < endHour;
+      const startMinutes = timeToMinutes(e.start_time);
+      const endMinutes = timeToMinutes(e.end_time);
+      return slotStart >= startMinutes && slotStart < endMinutes;
     });
   };
 

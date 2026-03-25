@@ -16,19 +16,28 @@ import AssignmentsPage from './pages/AssignmentsPage';
 import MessagesPage from './pages/MessagesPage';
 import StudentAssignmentsPage from './pages/StudentAssignmentsPage';
 import AuditLogPage from './pages/AuditLogPage';
-import FeedbackPage from './pages/FeedbackPage';
 import ExamAllocationPage from './pages/ExamAllocationPage';
-import OccupancyPage from './pages/OccupancyPage';
+import MentorGroupsPage from './pages/MentorGroupsPage';
+import MyMenteesPage from './pages/MyMenteesPage';
+
+import StudentsPage from './pages/StudentsPage';
+import SavedAllocationsPage from './pages/SavedAllocationsPage';
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading"><div className="spinner"></div></div>;
   if (!user) return <Navigate to="/login" replace />;
+  const roleTitle = user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)}` : 'User';
+
   return (
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
         <div className="top-bar">
+          <div className="top-bar-left">
+            <h3 className="top-bar-title">Campus Operations Suite</h3>
+            <span className={`role-chip role-${user.role}`}>{roleTitle}</span>
+          </div>
           <div className="top-bar-right">
             <ThemeToggle />
             <NotificationBell />
@@ -79,21 +88,26 @@ function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/feedback" element={<FeedbackPage />} />
-                <Route path="/occupancy" element={<OccupancyPage />} />
+
                 <Route element={<AdminRoute />}>
                   <Route path="/resources" element={<ResourcesPage />} />
                   <Route path="/approvals" element={<ApprovalsPage />} />
                   <Route path="/assignments" element={<AssignmentsPage />} />
                   <Route path="/exam-allocations" element={<ExamAllocationPage />} />
+                  <Route path="/saved-allocations" element={<SavedAllocationsPage />} />
+                  <Route path="/mentor-groups" element={<MentorGroupsPage />} />
                   <Route path="/audit-log" element={<AuditLogPage />} />
                 </Route>
                 <Route element={<StaffRoute />}>
                   <Route path="/bookings" element={<BookingsPage />} />
                   <Route path="/my-assignments" element={<AssignmentsPage />} />
+                  <Route path="/my-mentees" element={<MyMenteesPage />} />
                 </Route>
                 <Route element={<StaffOrAdminRoute />}>
                   <Route path="/student-activities" element={<StudentAssignmentsPage />} />
+                </Route>
+                <Route element={<AdminRoute />}>
+                  <Route path="/students" element={<StudentsPage />} />
                 </Route>
                 <Route path="/my-activities" element={<StudentAssignmentsPage />} />
               </Route>

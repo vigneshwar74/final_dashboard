@@ -6,6 +6,7 @@ const seed = async () => {
     console.log('Seeding database...');
 
     // Clear existing data
+    await db.query('DELETE FROM exam_student_allocations');
     await db.query('DELETE FROM occupancy');
     await db.query('DELETE FROM exam_allocations');
     await db.query('DELETE FROM feedback');
@@ -16,6 +17,7 @@ const seed = async () => {
     await db.query('DELETE FROM assignments');
     await db.query('DELETE FROM bookings');
     await db.query('DELETE FROM refresh_tokens');
+    await db.query('DELETE FROM students');
     await db.query('DELETE FROM resources');
     await db.query('DELETE FROM users');
 
@@ -31,6 +33,8 @@ const seed = async () => {
     await db.query("ALTER SEQUENCE feedback_id_seq RESTART WITH 1");
     await db.query("ALTER SEQUENCE exam_allocations_id_seq RESTART WITH 1");
     await db.query("ALTER SEQUENCE occupancy_id_seq RESTART WITH 1");
+    await db.query("ALTER SEQUENCE students_id_seq RESTART WITH 1");
+    await db.query("ALTER SEQUENCE exam_student_allocations_id_seq RESTART WITH 1");
 
     // Seed users with department and year
     const adminPw = await bcrypt.hash('admin123', 10);
@@ -65,9 +69,74 @@ const seed = async () => {
         ('Desktop PC-01', 'computer', 'Library', 'Library Building', 1, 'available', 'Dell OptiPlex with 27" monitor'),
         ('Desktop PC-02', 'computer', 'Library', 'Library Building', 1, 'available', 'Dell OptiPlex with 27" monitor'),
         ('Desktop PC-03', 'computer', 'Library', 'Library Building', 1, 'in_use', 'HP Elite with dual monitors'),
-        ('iMac Lab Station', 'computer', 'Design Lab', 'Arts Building', 1, 'available', 'iMac 27" for design work')
+        ('iMac Lab Station', 'computer', 'Design Lab', 'Arts Building', 1, 'available', 'iMac 27" for design work'),
+        ('Exam Hall A', 'exam_hall', 'Ground Floor', 'Exam Block', 60, 'available', 'Large exam hall with individual desks and CCTV'),
+        ('Exam Hall B', 'exam_hall', 'First Floor', 'Exam Block', 40, 'available', 'Medium exam hall with spaced seating'),
+        ('Exam Hall C', 'exam_hall', 'Ground Floor', 'Main Building', 80, 'available', 'Auditorium-style exam hall with numbered seats'),
+        ('Exam Hall D', 'exam_hall', 'Second Floor', 'Exam Block', 50, 'available', 'Standard exam hall with writing desks'),
+        ('Mini Exam Room', 'exam_hall', 'Third Floor', 'Main Building', 25, 'available', 'Small exam room for supplementary exams')
     `);
     console.log('  ✓ resources seeded');
+
+    // Seed 50 students across 5 departments (10 each)
+    await db.query(`
+      INSERT INTO students (name, roll_number, department, year, email) VALUES
+        ('Aarav Sharma', 'CS-001', 'Computer Science', '2nd Year', 'aarav.sharma@college.edu'),
+        ('Priya Patel', 'CS-002', 'Computer Science', '2nd Year', 'priya.patel@college.edu'),
+        ('Rohan Gupta', 'CS-003', 'Computer Science', '2nd Year', 'rohan.gupta@college.edu'),
+        ('Sneha Reddy', 'CS-004', 'Computer Science', '2nd Year', 'sneha.reddy@college.edu'),
+        ('Vikram Singh', 'CS-005', 'Computer Science', '3rd Year', 'vikram.singh@college.edu'),
+        ('Ananya Iyer', 'CS-006', 'Computer Science', '3rd Year', 'ananya.iyer@college.edu'),
+        ('Karthik Nair', 'CS-007', 'Computer Science', '3rd Year', 'karthik.nair@college.edu'),
+        ('Divya Menon', 'CS-008', 'Computer Science', '3rd Year', 'divya.menon@college.edu'),
+        ('Arjun Kumar', 'CS-009', 'Computer Science', '2nd Year', 'arjun.kumar@college.edu'),
+        ('Meera Joshi', 'CS-010', 'Computer Science', '2nd Year', 'meera.joshi@college.edu'),
+
+        ('Rahul Verma', 'ECE-001', 'Electronics', '2nd Year', 'rahul.verma@college.edu'),
+        ('Kavitha Rao', 'ECE-002', 'Electronics', '2nd Year', 'kavitha.rao@college.edu'),
+        ('Suresh Babu', 'ECE-003', 'Electronics', '2nd Year', 'suresh.babu@college.edu'),
+        ('Lakshmi Devi', 'ECE-004', 'Electronics', '2nd Year', 'lakshmi.devi@college.edu'),
+        ('Aditya Mohan', 'ECE-005', 'Electronics', '3rd Year', 'aditya.mohan@college.edu'),
+        ('Pooja Hegde', 'ECE-006', 'Electronics', '3rd Year', 'pooja.hegde@college.edu'),
+        ('Manoj Tiwari', 'ECE-007', 'Electronics', '3rd Year', 'manoj.tiwari@college.edu'),
+        ('Sanya Malhotra', 'ECE-008', 'Electronics', '3rd Year', 'sanya.malhotra@college.edu'),
+        ('Deepak Pandey', 'ECE-009', 'Electronics', '2nd Year', 'deepak.pandey@college.edu'),
+        ('Nisha Agarwal', 'ECE-010', 'Electronics', '2nd Year', 'nisha.agarwal@college.edu'),
+
+        ('Amit Desai', 'ME-001', 'Mechanical', '2nd Year', 'amit.desai@college.edu'),
+        ('Ritu Saxena', 'ME-002', 'Mechanical', '2nd Year', 'ritu.saxena@college.edu'),
+        ('Sanjay Kapoor', 'ME-003', 'Mechanical', '2nd Year', 'sanjay.kapoor@college.edu'),
+        ('Gayatri Mishra', 'ME-004', 'Mechanical', '2nd Year', 'gayatri.mishra@college.edu'),
+        ('Tarun Bhatt', 'ME-005', 'Mechanical', '3rd Year', 'tarun.bhatt@college.edu'),
+        ('Isha Chauhan', 'ME-006', 'Mechanical', '3rd Year', 'isha.chauhan@college.edu'),
+        ('Naveen Prasad', 'ME-007', 'Mechanical', '3rd Year', 'naveen.prasad@college.edu'),
+        ('Swati Kulkarni', 'ME-008', 'Mechanical', '3rd Year', 'swati.kulkarni@college.edu'),
+        ('Rajesh Pillai', 'ME-009', 'Mechanical', '2nd Year', 'rajesh.pillai@college.edu'),
+        ('Anu Krishnan', 'ME-010', 'Mechanical', '2nd Year', 'anu.krishnan@college.edu'),
+
+        ('Venkat Raman', 'EEE-001', 'Electrical', '2nd Year', 'venkat.raman@college.edu'),
+        ('Shalini Bose', 'EEE-002', 'Electrical', '2nd Year', 'shalini.bose@college.edu'),
+        ('Prakash Jha', 'EEE-003', 'Electrical', '2nd Year', 'prakash.jha@college.edu'),
+        ('Anjali Mehta', 'EEE-004', 'Electrical', '2nd Year', 'anjali.mehta@college.edu'),
+        ('Harish Chandra', 'EEE-005', 'Electrical', '3rd Year', 'harish.chandra@college.edu'),
+        ('Revathi Subramaniam', 'EEE-006', 'Electrical', '3rd Year', 'revathi.s@college.edu'),
+        ('Ganesh Bhosle', 'EEE-007', 'Electrical', '3rd Year', 'ganesh.bhosle@college.edu'),
+        ('Pallavi Sinha', 'EEE-008', 'Electrical', '3rd Year', 'pallavi.sinha@college.edu'),
+        ('Mohan Das', 'EEE-009', 'Electrical', '2nd Year', 'mohan.das@college.edu'),
+        ('Keerthi Narayan', 'EEE-010', 'Electrical', '2nd Year', 'keerthi.n@college.edu'),
+
+        ('Siddharth Rao', 'CE-001', 'Civil', '2nd Year', 'siddharth.rao@college.edu'),
+        ('Nandini Gowda', 'CE-002', 'Civil', '2nd Year', 'nandini.gowda@college.edu'),
+        ('Varun Tandon', 'CE-003', 'Civil', '2nd Year', 'varun.tandon@college.edu'),
+        ('Madhavi Latha', 'CE-004', 'Civil', '2nd Year', 'madhavi.latha@college.edu'),
+        ('Ashwin Menon', 'CE-005', 'Civil', '3rd Year', 'ashwin.menon@college.edu'),
+        ('Bhavana Shetty', 'CE-006', 'Civil', '3rd Year', 'bhavana.shetty@college.edu'),
+        ('Chetan Reddy', 'CE-007', 'Civil', '3rd Year', 'chetan.reddy@college.edu'),
+        ('Divya Hegde', 'CE-008', 'Civil', '3rd Year', 'divya.hegde@college.edu'),
+        ('Girish Patil', 'CE-009', 'Civil', '2nd Year', 'girish.patil@college.edu'),
+        ('Hamsa Priya', 'CE-010', 'Civil', '2nd Year', 'hamsa.priya@college.edu')
+    `);
+    console.log('  ✓ 50 students seeded (5 departments × 10)');
 
     // Seed bookings (staff only)
     const today = new Date().toISOString().split('T')[0];

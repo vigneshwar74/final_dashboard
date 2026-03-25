@@ -93,7 +93,7 @@ const ResourcesPage = () => {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1>Resources</h1>
-          <p>Manage classrooms, labs, equipment, and computers</p>
+          <p>Manage classrooms, labs, exam halls, equipment, and computers</p>
         </div>
         {user?.role === 'admin' && (
           <button className="btn btn-primary" onClick={openAdd}>+ Add Resource</button>
@@ -110,6 +110,7 @@ const ResourcesPage = () => {
           <option value="">All Types</option>
           <option value="classroom">Classroom</option>
           <option value="lab">Lab</option>
+          <option value="exam_hall">Exam Hall</option>
           <option value="equipment">Equipment</option>
           <option value="computer">Computer</option>
         </select>
@@ -200,6 +201,7 @@ const ResourcesPage = () => {
                   <select className="form-control" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                     <option value="classroom">Classroom</option>
                     <option value="lab">Lab</option>
+                    <option value="exam_hall">Exam Hall</option>
                     <option value="equipment">Equipment</option>
                     <option value="computer">Computer</option>
                   </select>

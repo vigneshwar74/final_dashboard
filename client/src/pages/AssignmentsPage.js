@@ -42,10 +42,14 @@ const AssignmentsPage = () => {
   const checkAvailability = async () => {
     if (!form.staff_id || !form.start_time || !form.end_time) return;
     try {
+      const startDate = form.start_time.split('T')[0];
+      const startTime = form.start_time.split('T')[1]?.substring(0, 5);
+      const endTime = form.end_time.split('T')[1]?.substring(0, 5);
       const res = await api.checkStaffAvailability({
         staff_id: form.staff_id,
-        start_time: form.start_time,
-        end_time: form.end_time,
+        date: startDate,
+        start_time: startTime,
+        end_time: endTime,
       });
       setAvailabilityMsg(res.available
         ? '✅ Staff is available for this time slot'
@@ -59,7 +63,15 @@ const AssignmentsPage = () => {
     e.preventDefault();
     setError('');
     try {
-      await api.createAssignment(form);
+      const startDate = form.start_time.split('T')[0];
+      const startTime = form.start_time.split('T')[1]?.substring(0, 5);
+      const endTime = form.end_time.split('T')[1]?.substring(0, 5);
+      await api.createAssignment({
+        ...form,
+        date: startDate,
+        start_time: startTime,
+        end_time: endTime,
+      });
       setShowModal(false);
       setForm({ staff_id: '', resource_id: '', title: '', description: '', start_time: '', end_time: '' });
       setAvailabilityMsg('');

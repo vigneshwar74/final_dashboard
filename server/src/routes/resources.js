@@ -56,7 +56,7 @@ router.post(
   authorize('admin'),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
-    body('type').isIn(['classroom', 'lab', 'equipment', 'computer']).withMessage('Invalid type'),
+    body('type').isIn(['classroom', 'lab', 'equipment', 'computer', 'exam_hall']).withMessage('Invalid type'),
     body('status').optional().isIn(['available', 'in_use', 'maintenance']),
     body('capacity').optional({ nullable: true }).isInt({ min: 1 }),
   ],
@@ -85,7 +85,7 @@ router.put(
   authorize('admin'),
   [
     body('name').optional().trim().notEmpty(),
-    body('type').optional().isIn(['classroom', 'lab', 'equipment', 'computer']),
+    body('type').optional().isIn(['classroom', 'lab', 'equipment', 'computer', 'exam_hall']),
     body('status').optional().isIn(['available', 'in_use', 'maintenance']),
     body('capacity').optional({ nullable: true }).isInt({ min: 1 }),
   ],

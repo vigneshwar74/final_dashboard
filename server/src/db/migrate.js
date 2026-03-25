@@ -25,7 +25,7 @@ const migrate = async () => {
       CREATE TABLE IF NOT EXISTS resources (
         id SERIAL PRIMARY KEY,
         name VARCHAR(150) NOT NULL,
-        type VARCHAR(50) NOT NULL CHECK (type IN ('classroom','lab','equipment','computer')),
+        type VARCHAR(50) NOT NULL CHECK (type IN ('classroom','lab','equipment','computer','exam_hall')),
         location VARCHAR(200),
         building VARCHAR(100),
         capacity INT,
@@ -35,6 +35,9 @@ const migrate = async () => {
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+    // Update type constraint to include exam_hall if table already existed
+    await db.query(`ALTER TABLE resources DROP CONSTRAINT IF EXISTS resources_type_check`);
+    await db.query(`ALTER TABLE resources ADD CONSTRAINT resources_type_check CHECK (type IN ('classroom','lab','equipment','computer','exam_hall'))`);
     console.log('  ✓ resources table');
 
     await db.query(`
@@ -99,6 +102,28 @@ const migrate = async () => {
     `);
     console.log('  ✓ messages table');
 
+    // Mentor groups: admin assigns student mentees to a staff mentor
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS mentor_groups (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        staff_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS mentor_group_members (
+        id SERIAL PRIMARY KEY,
+        mentor_group_id INT NOT NULL REFERENCES mentor_groups(id) ON DELETE CASCADE,
+        student_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (student_id)
+      );
+    `);
+    console.log('  ✓ mentor_groups tables');
+
     // Student assignments: staff/admin assigns activity to students
     await db.query(`
       CREATE TABLE IF NOT EXISTS student_assignments (
@@ -129,6 +154,8 @@ const migrate = async () => {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_assignments_resource ON assignments(resource_id, date)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_id)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_messages_role ON messages(recipient_role)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_mentor_groups_staff ON mentor_groups(staff_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_mentor_group_members_group ON mentor_group_members(mentor_group_id)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_student_assignments_student ON student_assignments(student_id)`);
     console.log('  ✓ indexes created');
 
@@ -198,6 +225,39 @@ const migrate = async () => {
       );
     `);
     console.log('  ✓ exam_allocations table');
+
+    // Students table (exam-specific, separate from users)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        roll_number VARCHAR(50) UNIQUE NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        year VARCHAR(20),
+        email VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('  ✓ students table');
+
+    // Exam-student allocations: tracks which students are allocated to which exam
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS exam_student_allocations (
+        id SERIAL PRIMARY KEY,
+        exam_allocation_id INT NOT NULL REFERENCES exam_allocations(id) ON DELETE CASCADE,
+        student_id INT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        seat_no INT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_esa_exam_student ON exam_student_allocations(exam_allocation_id, student_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_esa_student ON exam_student_allocations(student_id)`);
+    console.log('  ✓ exam_student_allocations table');
+
+    // Ensure mentor group members reference students table
+    await db.query(`ALTER TABLE mentor_group_members DROP CONSTRAINT IF EXISTS mentor_group_members_student_id_fkey`);
+    await db.query(`ALTER TABLE mentor_group_members ADD CONSTRAINT mentor_group_members_student_id_fkey FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE`);
 
     // Occupancy tracking
     await db.query(`

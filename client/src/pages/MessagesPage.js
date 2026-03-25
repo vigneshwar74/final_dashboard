@@ -9,9 +9,12 @@ const MessagesPage = () => {
   const [showCompose, setShowCompose] = useState(false);
   const [recipientUsers, setRecipientUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('inbox');
+  const [mentorGroups, setMentorGroups] = useState([]);
   const [form, setForm] = useState({
     recipient_role: '',
     recipient_id: '',
+    send_to_mentees: false,
+    mentor_group_id: '',
     subject: '',
     body: '',
   });
@@ -27,6 +30,19 @@ const MessagesPage = () => {
   }, []);
 
   useEffect(() => { fetchMessages(); }, [fetchMessages]);
+
+  useEffect(() => {
+    const fetchMentorGroups = async () => {
+      if (user?.role !== 'staff') return;
+      try {
+        const data = await api.getMyMentees();
+        setMentorGroups(data.groups || []);
+      } catch (err) {
+        setMentorGroups([]);
+      }
+    };
+    fetchMentorGroups();
+  }, [user?.role]);
 
   // Determine who this user can message
   const canCompose = user?.role === 'admin' || user?.role === 'staff';
@@ -54,14 +70,22 @@ const MessagesPage = () => {
     setError('');
     setSuccess('');
     try {
-      await api.sendMessage({
-        recipient_role: form.recipient_role,
-        recipient_id: form.recipient_id || null,
-        subject: form.subject,
-        body: form.body,
-      });
+      if (user?.role === 'staff' && form.send_to_mentees) {
+        await api.sendMessageToMentees({
+          mentor_group_id: form.mentor_group_id || null,
+          subject: form.subject,
+          body: form.body,
+        });
+      } else {
+        await api.sendMessage({
+          recipient_role: form.recipient_role,
+          recipient_id: form.recipient_id || null,
+          subject: form.subject,
+          body: form.body,
+        });
+      }
       setSuccess('Message sent successfully!');
-      setForm({ recipient_role: '', recipient_id: '', subject: '', body: '' });
+      setForm({ recipient_role: '', recipient_id: '', send_to_mentees: false, mentor_group_id: '', subject: '', body: '' });
       setTimeout(() => { setSuccess(''); setShowCompose(false); }, 1500);
       fetchMessages();
     } catch (err) {
@@ -164,15 +188,49 @@ const MessagesPage = () => {
               {error && <div className="alert alert-error">{error}</div>}
               {success && <div className="alert alert-success">{success}</div>}
 
-              <div className="form-group">
-                <label>Send To (Role) *</label>
-                <select value={form.recipient_role} onChange={e => handleRoleChange(e.target.value)} required>
-                  <option value="">Select role...</option>
-                  {allowedRecipientRoles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-              </div>
+              {user?.role === 'staff' && (
+                <div className="form-group" style={{ border: '1px solid var(--gray-200)', borderRadius: 10, padding: 12 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <input
+                      type="checkbox"
+                      checked={form.send_to_mentees}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          send_to_mentees: e.target.checked,
+                          recipient_role: e.target.checked ? '' : form.recipient_role,
+                          recipient_id: '',
+                        });
+                      }}
+                    />
+                    Send to my mentees
+                  </label>
 
-              {form.recipient_role && (
+                  {form.send_to_mentees && (
+                    <select
+                      value={form.mentor_group_id}
+                      onChange={(e) => setForm({ ...form, mentor_group_id: e.target.value })}
+                    >
+                      <option value="">All my mentees</option>
+                      {mentorGroups.map((g) => (
+                        <option key={g.id} value={g.id}>{g.name} ({g.student_count})</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {!form.send_to_mentees && (
+                <div className="form-group">
+                  <label>Send To (Role) *</label>
+                  <select value={form.recipient_role} onChange={e => handleRoleChange(e.target.value)} required>
+                    <option value="">Select role...</option>
+                    {allowedRecipientRoles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {!form.send_to_mentees && form.recipient_role && (
                 <div className="form-group">
                   <label>Specific Recipient (optional - leave blank to send to all)</label>
                   <select value={form.recipient_id} onChange={e => setForm({ ...form, recipient_id: e.target.value })}>

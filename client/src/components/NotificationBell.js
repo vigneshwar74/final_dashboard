@@ -26,32 +26,32 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="notif-bell-wrapper" ref={ref}>
-      <button className="notif-bell-btn" onClick={() => setOpen(!open)} title="Notifications">
+    <div className="notification-wrapper" ref={ref}>
+      <button className="notification-bell" onClick={() => setOpen(!open)} title="Notifications">
         🔔
-        {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+        {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
       </button>
 
       {open && (
-        <div className="notif-dropdown">
-          <div className="notif-dropdown-header">
+        <div className="notification-dropdown">
+          <div className="notification-dropdown-header">
             <strong>Notifications</strong>
             {unreadCount > 0 && (
               <button className="btn btn-sm btn-outline" onClick={markAllRead}>Mark all read</button>
             )}
           </div>
-          <div className="notif-dropdown-list">
+          <div className="notification-list">
             {notifications.length === 0 ? (
-              <div className="notif-empty">No notifications yet</div>
+              <div className="empty-state" style={{ padding: 18, fontSize: 13 }}>No notifications yet</div>
             ) : notifications.slice(0, 20).map(n => (
               <div
                 key={n.id}
-                className={`notif-item ${!n.is_read ? 'unread' : ''}`}
+                className={`notification-item ${!n.is_read ? 'unread' : ''}`}
                 onClick={() => { if (!n.is_read) markRead(n.id); }}
               >
-                <div className="notif-item-title">{n.title}</div>
-                {n.body && <div className="notif-item-body">{n.body}</div>}
-                <div className="notif-item-time">{timeAgo(n.created_at)}</div>
+                <div className="notif-title">{n.title}</div>
+                {n.body && <div className="notif-body">{n.body}</div>}
+                <div className="notif-time">{timeAgo(n.created_at)}</div>
               </div>
             ))}
           </div>

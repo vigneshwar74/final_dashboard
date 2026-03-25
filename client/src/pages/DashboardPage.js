@@ -72,7 +72,6 @@ const StaffDashboard = ({ user }) => {
           <span className="value">{unread}</span>
         </div>
       </div>
-
       {bookings.length > 0 && (
         <div className="card" style={{ marginTop: 24 }}>
           <div className="card-header"><h3>Recent Bookings</h3></div>
@@ -101,17 +100,20 @@ const StaffDashboard = ({ user }) => {
 const StudentDashboard = ({ user }) => {
   const [activities, setActivities] = useState([]);
   const [unread, setUnread] = useState(0);
+  const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [a, u] = await Promise.all([
+        const [a, u, m] = await Promise.all([
           api.getStudentAssignments(),
           api.getUnreadCount(),
+          api.getMyMentor(),
         ]);
         setActivities(a);
         setUnread(u.count || 0);
+        setMentor(m || null);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -145,6 +147,34 @@ const StudentDashboard = ({ user }) => {
         </div>
       </div>
 
+      <div className="card mentor-card" style={{ marginTop: 16 }}>
+        <div className="card-header"><h3>My Mentor</h3></div>
+        {mentor?.assigned ? (
+          <div className="mentor-grid">
+            <div>
+              <div className="mentor-label">Mentor Name</div>
+              <div className="mentor-value">{mentor.mentor_name}</div>
+            </div>
+            <div>
+              <div className="mentor-label">Email</div>
+              <div className="mentor-value">{mentor.mentor_email || '-'}</div>
+            </div>
+            <div>
+              <div className="mentor-label">Department</div>
+              <div className="mentor-value">{mentor.mentor_department || '-'}</div>
+            </div>
+            <div>
+              <div className="mentor-label">Mentor Group</div>
+              <div className="mentor-value">{mentor.mentor_group_name}</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ color: 'var(--gray-500)' }}>
+            Mentor is not assigned yet. Please contact admin.
+          </div>
+        )}
+      </div>
+
       {activities.length > 0 && (
         <div className="card" style={{ marginTop: 24 }}>
           <div className="card-header"><h3>My Activities</h3></div>
@@ -175,21 +205,24 @@ const AdminDashboard = ({ user }) => {
   const [byType, setByType] = useState([]);
   const [trend, setTrend] = useState([]);
   const [topResources, setTopResources] = useState([]);
+  const [studentStats, setStudentStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [trendDays, setTrendDays] = useState(7);
 
   const fetchData = async () => {
     try {
-      const [s, t, tr, top] = await Promise.all([
+      const [s, t, tr, top, ss] = await Promise.all([
         api.getSummary(),
         api.getByType(),
         api.getTrend(trendDays),
         api.getTopResources(5),
+        api.getStudentStats(),
       ]);
       setSummary(s);
       setByType(t);
       setTrend(tr);
       setTopResources(top);
+      setStudentStats(ss);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {
@@ -253,6 +286,25 @@ const AdminDashboard = ({ user }) => {
           <div className="summary-card maintenance">
             <span className="label">Maintenance</span>
             <span className="value">{summary.maintenance}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Student Stats */}
+      {studentStats && (
+        <div style={{ marginTop: 16 }}>
+          <h3 style={{ marginBottom: 10, fontSize: 15 }}>👨‍🎓 Students Overview</h3>
+          <div className="summary-grid">
+            <div className="summary-card" style={{ borderLeft: '4px solid #7c3aed' }}>
+              <span className="label">Total Students</span>
+              <span className="value">{studentStats.total}</span>
+            </div>
+            {studentStats.byDepartment.map(d => (
+              <div key={d.department} className="summary-card" style={{ borderLeft: '4px solid #1a56db' }}>
+                <span className="label">{d.department}</span>
+                <span className="value">{d.count}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}

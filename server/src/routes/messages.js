@@ -109,6 +109,69 @@ router.post(
   }
 );
 
+// POST /api/messages/mentees - staff sends one message to all assigned mentees
+router.post(
+  '/mentees',
+  authenticate,
+  authorize('staff'),
+  [
+    body('subject').trim().notEmpty().withMessage('Subject required'),
+    body('body').trim().notEmpty().withMessage('Message body required'),
+    body('mentor_group_id').optional({ nullable: true }).isInt(),
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { subject, body: msgBody, mentor_group_id } = req.body;
+
+      const params = [req.user.id];
+      let menteeQuery = `
+        SELECT DISTINCT s.email
+        FROM mentor_group_members mgm
+        JOIN mentor_groups mg ON mg.id = mgm.mentor_group_id
+        JOIN students s ON s.id = mgm.student_id
+        WHERE mg.staff_id = $1
+      `;
+
+      if (mentor_group_id) {
+        params.push(mentor_group_id);
+        menteeQuery += ` AND mg.id = $${params.length}`;
+      }
+
+      const menteeRows = await db.query(menteeQuery, params);
+      const menteeEmails = menteeRows.rows.map((r) => r.email).filter(Boolean);
+      if (menteeEmails.length === 0) {
+        return res.status(400).json({ error: 'No mentees found for this selection.' });
+      }
+
+      const userRows = await db.query(
+        `SELECT id FROM users WHERE role = 'student' AND email = ANY($1)`,
+        [menteeEmails]
+      );
+      const menteeUserIds = userRows.rows.map((r) => r.id);
+      if (menteeUserIds.length === 0) {
+        return res.status(400).json({ error: 'No mentee user accounts found. Ask admin to create student user accounts.' });
+      }
+
+      await db.query(
+        `INSERT INTO messages (sender_id, recipient_role, recipient_id, subject, body)
+         SELECT $1, 'student', unnest($2::int[]), $3, $4`,
+        [req.user.id, menteeUserIds, subject, msgBody]
+      );
+
+      res.status(201).json({
+        success: true,
+        recipients: menteeUserIds.length,
+        skipped: Math.max(0, menteeEmails.length - menteeUserIds.length),
+        message: `Message sent to ${menteeUserIds.length} mentee(s).`,
+      });
+    } catch (err) {
+      console.error('Send mentees message error:', err);
+      res.status(500).json({ error: 'Server error.' });
+    }
+  }
+);
+
 // PUT /api/messages/:id/read - mark message as read
 router.put('/:id/read', authenticate, async (req, res) => {
   try {

@@ -33,10 +33,17 @@ const LoginPage = () => {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>{isRegister ? 'Create Account' : 'Welcome Back'}</h1>
-        <p className="subtitle">
-          {isRegister ? 'Register for a new account' : 'Sign in to the College Resource Dashboard'}
-        </p>
+        <div className="login-head">
+          <h1>{isRegister ? 'Create Account' : 'Welcome Back'}</h1>
+          <p className="subtitle">
+            {isRegister ? 'Register for a new account' : 'Sign in to the College Resource Dashboard'}
+          </p>
+          <div className="login-tags">
+            <span className="login-tag">Smart Scheduling</span>
+            <span className="login-tag">Mentor Management</span>
+            <span className="login-tag">Live Notifications</span>
+          </div>
+        </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -94,11 +101,11 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 16, fontSize: 14, color: '#6b7280' }}>
+        <p className="auth-switch-text">
           {isRegister ? 'Already have an account? ' : "Don't have an account? "}
           <button
             onClick={() => { setIsRegister(!isRegister); setError(''); }}
-            style={{ background: 'none', border: 'none', color: '#1a56db', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+            className="auth-switch-btn"
           >
             {isRegister ? 'Sign In' : 'Register'}
           </button>

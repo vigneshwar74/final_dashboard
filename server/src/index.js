@@ -14,9 +14,9 @@ const messageRoutes = require('./routes/messages');
 const studentAssignmentRoutes = require('./routes/studentAssignments');
 const notificationRoutes = require('./routes/notifications');
 const auditLogRoutes = require('./routes/auditLog');
-const feedbackRoutes = require('./routes/feedback');
 const examAllocationRoutes = require('./routes/examAllocations');
-const occupancyRoutes = require('./routes/occupancy');
+const studentRoutes = require('./routes/students');
+const mentorGroupRoutes = require('./routes/mentorGroups');
 
 const app = express();
 const server = http.createServer(app);
@@ -72,9 +72,9 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/student-assignments', studentAssignmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
-app.use('/api/feedback', feedbackRoutes);
 app.use('/api/exam-allocations', examAllocationRoutes);
-app.use('/api/occupancy', occupancyRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/mentor-groups', mentorGroupRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
