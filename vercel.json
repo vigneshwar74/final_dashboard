@@ -4,6 +4,10 @@
   "buildCommand": "npm run build",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "/api?path=:path*"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
