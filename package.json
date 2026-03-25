@@ -2,7 +2,7 @@
   "name": "college-resource-dashboard",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix client",
+    "build": "npm run build --prefix client && node scripts/vercel-build.js",
     "dev:client": "npm start --prefix client",
     "dev:server": "npm run dev --prefix server",
     "setup:server": "npm run setup --prefix server"
